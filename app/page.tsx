@@ -521,9 +521,14 @@ export default function Page() {
               <Flex direction="column" justify="between" height="100%" gap="5">
                 <Flex justify="between" align="start" gap="3" wrap="wrap" className="panel-header">
                   <Flex direction="column" gap="2">
-                    <Badge size="2" radius="full" variant="surface" className="soft-chip">
-                      {roomConfig.roomTitle}
-                    </Badge>
+                    <Flex gap="2" wrap="wrap">
+                      <Badge size="2" radius="full" variant="surface" className="soft-chip">
+                        {roomConfig.roomTitle}
+                      </Badge>
+                      <Badge size="2" radius="full" className="live-chip">
+                        Cinema Live
+                      </Badge>
+                    </Flex>
                     <Heading size="8" className="hero-heading">
                       {snapshot ? currentTitle : `Welcome ${selectedPerson.name}`}
                     </Heading>
