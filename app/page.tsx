@@ -962,9 +962,9 @@ function InstallPanel({
           <Text size="1" color="gray">
             Extension install
           </Text>
-          <Strong>Install the Chrome bridge.</Strong>
+          <Strong>Install the Chrome bridge (v1.0.1).</Strong>
           <Text size="2" color="gray">
-            Download it once, load it once, then the room can drive Netflix.
+            Download it once, load it once, then the room can drive Netflix. If sync is broken, ensure you have the latest version.
           </Text>
         </Flex>
       </Card>
