@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Watch Room</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="sheet">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Watch Room</p>
+          <h1 class="title">Cinema bridge</h1>
+          <p class="subtitle" id="hero-subtitle">Checking room and Netflix...</p>
+        </div>
+        <div class="hero-icon">
+          <img src="icons/icon-48.png" alt="" width="36" height="36" />
+        </div>
+      </section>
+
+      <section class="status-strip" aria-label="Extension status">
+        <span class="chip" id="room-chip">Room idle</span>
+        <span class="chip" id="netflix-chip">Netflix idle</span>
+        <span class="chip" id="online-chip">0 online</span>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <p class="panel-kicker">Room</p>
+          <strong class="panel-title" id="room-title">Watch Room</strong>
+        </div>
+        <p class="panel-body" id="room-subtitle">Open your room to connect the extension.</p>
+      </section>
+
+      <section class="panel panel-cinema">
+        <div class="panel-head">
+          <p class="panel-kicker">Netflix</p>
+          <strong class="panel-title" id="netflix-title">Not ready</strong>
+        </div>
+        <p class="panel-body" id="netflix-subtitle">Open or focus a Netflix tab to start the cinema overlay.</p>
+      </section>
+
+      <section class="actions">
+        <button class="action-button action-primary" id="open-room" type="button">
+          <span class="action-title">Open room</span>
+          <span class="action-caption">watch-room-xi.vercel.app</span>
+        </button>
+        <button class="action-button" id="open-netflix" type="button">
+          <span class="action-title">Open Netflix</span>
+          <span class="action-caption">Launch or focus a tab</span>
+        </button>
+      </section>
+
+      <footer class="footer">
+        <span class="footer-copy" id="footer-status">Toolbar bridge ready.</span>
+      </footer>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>
