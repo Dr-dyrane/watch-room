@@ -31,6 +31,7 @@ import { ExternalLink, LockKeyhole, MapPin, MessageCircleMore, Sparkles, Tv, Use
 import { ThemeToggle } from '@/components/theme-toggle';
 import { getPublicRoomConfig } from '@/lib/env';
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import {
   detectProfile,
   formatTime,
@@ -47,6 +48,24 @@ import {
 } from '@/lib/watch-room';
 
 type PanelType = 'people' | 'chat' | 'access' | 'install' | null;
+
+interface PlaybackPayloadRow {
+  event_id: number | string;
+  action: string;
+  playback_time: number | string;
+  is_playing: boolean | number;
+  title: string | null;
+  session_id: string;
+  sender: string;
+  updated_at: string;
+}
+
+interface MessagePayloadRow {
+  id: string;
+  sender: string;
+  body: string;
+  created_at: string;
+}
 
 export default function Page() {
   const session = useMemo(() => getOrCreateSession(), []);
@@ -273,7 +292,7 @@ export default function Page() {
       setPresenceSessionIds(Array.from(new Set(onlineIds)));
     };
 
-    const updatePlayback = (payload: any) => {
+    const updatePlayback = (payload: RealtimePostgresChangesPayload<PlaybackPayloadRow>) => {
       const data = payload.new;
       if (!data) return;
 
@@ -291,7 +310,7 @@ export default function Page() {
       setSnapshot((prev) => (prev ? { ...prev, playback: formattedPlayback } : null));
     };
 
-    const updateMessages = (payload: any) => {
+    const updateMessages = (payload: RealtimePostgresChangesPayload<MessagePayloadRow>) => {
       const data = payload.new;
       if (!data) return;
 
