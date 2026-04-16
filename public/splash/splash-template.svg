@@ -1,0 +1,8 @@
+<svg width="1125" height="2436" viewBox="0 0 1125 2436" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1125" height="2436" fill="#090c11"/>
+  <rect x="225" y="918" width="675" height="600" rx="24" fill="#1a1f2e"/>
+  <rect x="262" y="955" width="601" height="526" rx="12" fill="#2a3448"/>
+  <circle cx="562.5" cy="1218" r="54" fill="#3a4560"/>
+  <circle cx="562.5" cy="1218" r="24" fill="#5a6888"/>
+  <text x="562.5" y="1650" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="32" font-weight="600" fill="#f5f7fb" text-anchor="middle">Watch Room</text>
+</svg>

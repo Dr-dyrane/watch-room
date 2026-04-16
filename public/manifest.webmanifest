@@ -1,0 +1,152 @@
+{
+  "name": "Watch Room",
+  "short_name": "Watch Room",
+  "description": "Private watch room for couples",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090c11",
+  "theme_color": "#090c11",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["entertainment", "social", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "splash_pages": [
+    {
+      "src": "/splash/apple-splash-2048-2732.png",
+      "sizes": "2048x2732",
+      "purpose": "any"
+    },
+    {
+      "src": "/splash/apple-splash-1668-2224.png",
+      "sizes": "1668x2224",
+      "purpose": "any"
+    },
+    {
+      "src": "/splash/apple-splash-1536-2048.png",
+      "sizes": "1536x2048",
+      "purpose": "any"
+    },
+    {
+      "src": "/splash/apple-splash-1125-2436.png",
+      "sizes": "1125x2436",
+      "purpose": "any"
+    },
+    {
+      "src": "/splash/apple-splash-1242-2688.png",
+      "sizes": "1242x2688",
+      "purpose": "any"
+    },
+    {
+      "src": "/splash/apple-splash-828-1792.png",
+      "sizes": "828x1792",
+      "purpose": "any"
+    },
+    {
+      "src": "/splash/apple-splash-1242-2208.png",
+      "sizes": "1242x2208",
+      "purpose": "any"
+    },
+    {
+      "src": "/splash/apple-splash-750-1334.png",
+      "sizes": "750x1334",
+      "purpose": "any"
+    },
+    {
+      "src": "/splash/apple-splash-640-1136.png",
+      "sizes": "640x1136",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Join Room",
+      "short_name": "Join",
+      "description": "Quick join your watch room",
+      "url": "/?action=join",
+      "icons": [
+        {
+          "src": "/icons/shortcut-join.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Open Netflix",
+      "short_name": "Netflix",
+      "description": "Open Netflix bridge",
+      "url": "/?action=netflix",
+      "icons": [
+        {
+          "src": "/icons/shortcut-netflix.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/desktop-1.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Main watch room interface"
+    },
+    {
+      "src": "/screenshots/mobile-1.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Mobile watch room experience"
+    }
+  ]
+}

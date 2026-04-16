@@ -3,18 +3,24 @@
   "name": "Private Watch Room Bridge",
   "version": "1.0.0",
   "description": "Minimal Netflix bridge for a private shared room.",
-  "permissions": ["storage", "tabs"],
+  "permissions": ["storage", "tabs", "scripting"],
   "host_permissions": [
     "https://www.netflix.com/*",
     "http://localhost:3000/*",
-    "https://*/*"
+    "http://127.0.0.1:3000/*",
+    "https://*.vercel.app/*"
   ],
   "background": {
     "service_worker": "background.js"
   },
   "content_scripts": [
     {
-      "matches": ["https://www.netflix.com/*", "http://localhost:3000/*"],
+      "matches": [
+        "https://www.netflix.com/*",
+        "http://localhost:3000/*",
+        "http://127.0.0.1:3000/*",
+        "https://*.vercel.app/*"
+      ],
       "js": ["content.js"],
       "run_at": "document_idle"
     }

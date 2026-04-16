@@ -1,1 +1,5 @@
 .env.local
+.next
+node_modules
+supabase/.temp
+vercel
