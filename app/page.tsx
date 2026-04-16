@@ -18,6 +18,7 @@ import {
 import {
   CopyIcon,
   Cross2Icon,
+  DownloadIcon,
   PaperPlaneIcon,
   PauseIcon,
   PlayIcon,
@@ -25,7 +26,7 @@ import {
   TrackNextIcon,
   TrackPreviousIcon,
 } from '@radix-ui/react-icons';
-import { LockKeyhole, MapPin, MessageCircleMore, Sparkles, Tv, Users2 } from 'lucide-react';
+import { ExternalLink, LockKeyhole, MapPin, MessageCircleMore, Sparkles, Tv, Users2 } from 'lucide-react';
 
 import { ThemeToggle } from '@/components/theme-toggle';
 import { getPublicRoomConfig } from '@/lib/env';
@@ -45,7 +46,7 @@ import {
   type RoomSnapshot,
 } from '@/lib/watch-room';
 
-type PanelType = 'people' | 'chat' | 'access' | null;
+type PanelType = 'people' | 'chat' | 'access' | 'install' | null;
 
 export default function Page() {
   const session = useMemo(() => getOrCreateSession(), []);
@@ -64,6 +65,7 @@ export default function Page() {
   const [extensionState, setExtensionState] = useState({ title: '', currentTime: 0, paused: true });
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [copiedChromePath, setCopiedChromePath] = useState(false);
   const [panel, setPanel] = useState<PanelType>(null);
   const [joining, startJoining] = useTransition();
   const [sending, startSending] = useTransition();
@@ -470,6 +472,12 @@ export default function Page() {
     window.postMessage({ source: 'watch-room-app', type: 'OPEN_NETFLIX' }, '*');
   };
 
+  const copyChromeExtensionsPath = async () => {
+    await navigator.clipboard.writeText('chrome://extensions');
+    setCopiedChromePath(true);
+    window.setTimeout(() => setCopiedChromePath(false), 1400);
+  };
+
   const readyLabel = snapshot?.me?.ready ? 'Ready' : 'Waiting';
   const bridgeLabel = extensionConnected ? 'Bridge live' : 'Bridge idle';
 
@@ -499,6 +507,10 @@ export default function Page() {
               </Button>
               <Button size="3" variant="soft" className="surface-button" onClick={openNetflix}>
                 Open Netflix
+              </Button>
+              <Button size="3" variant="soft" className="surface-button" onClick={() => setPanel('install')}>
+                <DownloadIcon />
+                Install
               </Button>
               <ThemeToggle />
             </Flex>
@@ -655,8 +667,8 @@ export default function Page() {
                     </Text>
                   </Box>
 
-                  <Button size="3" className="surface-button" variant="soft" onClick={() => setPanel('access')}>
-                    Room flow
+                  <Button size="3" className="surface-button" variant="soft" onClick={() => setPanel('install')}>
+                    Install extension
                   </Button>
                 </Flex>
               </Card>
@@ -697,6 +709,7 @@ export default function Page() {
               {panel === 'people' ? <PeoplePanel members={members} /> : null}
               {panel === 'chat' ? <ChatPanel draftMessage={draftMessage} sending={sending} sendMessage={sendMessage} setDraftMessage={setDraftMessage} snapshot={snapshot} /> : null}
               {panel === 'access' ? <AccessPanel currentTitle={roomConfig.roomTitle} error={error} extensionConnected={extensionConnected} joining={joining} passcode={passcode} profileId={profileId} setPasscode={setPasscode} setProfileId={setProfileId} snapshot={snapshot} submitJoin={submitJoin} /> : null}
+              {panel === 'install' ? <InstallPanel copyChromeExtensionsPath={copyChromeExtensionsPath} copiedChromePath={copiedChromePath} extensionConnected={extensionConnected} openNetflix={openNetflix} /> : null}
             </div>
           </section>
         </>
@@ -868,6 +881,133 @@ function AccessPanel({
   );
 }
 
+function InstallPanel({
+  copyChromeExtensionsPath,
+  copiedChromePath,
+  extensionConnected,
+  openNetflix,
+}: {
+  copyChromeExtensionsPath: () => Promise<void>;
+  copiedChromePath: boolean;
+  extensionConnected: boolean;
+  openNetflix: () => void;
+}) {
+  const extensionUrl = '/downloads/watch-room-extension.zip';
+
+  return (
+    <Flex direction="column" gap="3">
+      <Card className="sheet-card install-hero-card">
+        <Flex direction="column" gap="2">
+          <Text size="1" color="gray">
+            Extension install
+          </Text>
+          <Strong>Install the Chrome bridge.</Strong>
+          <Text size="2" color="gray">
+            Download it once, load it once, then the room can drive Netflix.
+          </Text>
+        </Flex>
+      </Card>
+
+      <Flex gap="2" wrap="wrap">
+        <Button asChild size="3">
+          <a href={extensionUrl} download>
+            <DownloadIcon />
+            Download zip
+          </a>
+        </Button>
+        <Button size="3" variant="soft" className="surface-button" onClick={copyChromeExtensionsPath}>
+          <ExternalLink size={16} />
+          {copiedChromePath ? 'Copied chrome://extensions' : 'Copy Chrome extensions path'}
+        </Button>
+      </Flex>
+
+      <Flex direction="column" gap="2">
+        <InstallStep
+          step="1"
+          title="Download and unzip"
+          body="Extract the zip somewhere permanent."
+        />
+        <InstallStep
+          step="2"
+          title="Turn on Developer mode"
+          body="Open chrome://extensions and enable Developer mode."
+        />
+        <InstallStep
+          step="3"
+          title="Load unpacked"
+          body="Choose the unzipped watch-room extension folder."
+        />
+        <InstallStep
+          step="4"
+          title="Pin and test"
+          body="Pin Watch Room, open the popup, then open Netflix."
+        />
+      </Flex>
+
+      <Card className="sheet-card install-verify-card">
+        <Flex direction="column" gap="3">
+          <Flex justify="between" align="center" gap="3" wrap="wrap">
+            <Box>
+              <Text size="1" color="gray">
+                Final check
+              </Text>
+              <Text as="p" size="3" weight="medium">
+                {extensionConnected ? 'Bridge detected in this browser.' : 'Bridge not detected yet.'}
+              </Text>
+            </Box>
+            <Badge radius="full" color={extensionConnected ? 'green' : 'gray'} variant="soft">
+              {extensionConnected ? 'Ready' : 'Waiting'}
+            </Badge>
+          </Flex>
+          <Text size="2" color="gray">
+            Reload once after updates. Then open the popup and Netflix.
+          </Text>
+          <Flex gap="2" wrap="wrap">
+            <Button size="3" variant="soft" className="surface-button" onClick={openNetflix}>
+              Open Netflix
+            </Button>
+            <Button asChild size="3" variant="soft" className="surface-button">
+              <a href="https://watch-room-xi.vercel.app/" target="_blank" rel="noreferrer">
+                Open deployed room
+              </a>
+            </Button>
+          </Flex>
+        </Flex>
+      </Card>
+    </Flex>
+  );
+}
+
+function InstallStep({
+  body,
+  step,
+  title,
+}: {
+  body: string;
+  step: string;
+  title: string;
+}) {
+  return (
+    <Card className="sheet-card install-step-card">
+      <Flex align="start" gap="3">
+        <Box className="install-step-index">
+          <Text size="2" weight="bold">
+            {step}
+          </Text>
+        </Box>
+        <Flex direction="column" gap="1" minWidth="0">
+          <Text size="3" weight="medium">
+            {title}
+          </Text>
+          <Text size="2" color="gray">
+            {body}
+          </Text>
+        </Flex>
+      </Flex>
+    </Card>
+  );
+}
+
 function GateSurface({
   detectedProfileId,
   error,
@@ -959,6 +1099,7 @@ function ActionPill({ label }: { label: string }) {
 function panelTitle(panel: PanelType) {
   if (panel === 'people') return 'Together';
   if (panel === 'chat') return 'Story';
+  if (panel === 'install') return 'Install';
   return 'Room';
 }
 
