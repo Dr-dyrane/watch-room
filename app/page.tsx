@@ -69,6 +69,7 @@ export default function Page() {
   const [sending, startSending] = useTransition();
   const appliedEventId = useRef<number>(0);
   const refreshSnapshotRef = useRef<(() => Promise<void>) | null>(null);
+  const persistPlaybackRef = useRef<(action: PlaybackAction, currentTime: number) => Promise<void>>(async () => {});
 
   const activePerson = getPerson(activeProfileId);
   const selectedPerson = getPerson(profileId);
@@ -119,6 +120,20 @@ export default function Page() {
       if (event.data.type === 'EXTENSION_ERROR') {
         setExtensionError(typeof event.data.message === 'string' ? event.data.message : 'Netflix bridge unavailable');
       }
+
+      if (event.data.type === 'OVERLAY_CONTROL' && activePasscode) {
+        const action = event.data.action as PlaybackAction | undefined;
+        const currentTime =
+          typeof event.data.currentTime === 'number' ? event.data.currentTime : extensionState.currentTime;
+
+        if (!action) {
+          return;
+        }
+
+        startSending(async () => {
+          await persistPlaybackRef.current(action, currentTime);
+        });
+      }
     };
 
     window.addEventListener('message', onMessage);
@@ -129,7 +144,7 @@ export default function Page() {
       window.clearInterval(intervalId);
       window.removeEventListener('message', onMessage);
     };
-  }, []);
+  }, [activePasscode, extensionState.currentTime, startSending]);
 
   useEffect(() => {
     if (!snapshot?.playback) {
@@ -282,6 +297,35 @@ export default function Page() {
   }, [activePasscode, activePerson.name, roomConfig.roomSlug, session.id]);
 
   useEffect(() => {
+    persistPlaybackRef.current = async (action: PlaybackAction, currentTime: number) => {
+      await postJson('/api/room/playback', {
+        secret: activePasscode,
+        sessionId: session.id,
+        sender: activePerson.name,
+        action,
+        currentTime,
+        isPlaying: action === 'PLAY' ? true : action === 'PAUSE' ? false : !extensionState.paused,
+        title: extensionState.title || snapshot?.playback?.title || null,
+      });
+
+      const nextSnapshot = await postJson<RoomSnapshot>('/api/room/snapshot', {
+        secret: activePasscode,
+        sessionId: session.id,
+        name: activePerson.name,
+      });
+
+      setSnapshot(nextSnapshot);
+    };
+  }, [
+    activePasscode,
+    activePerson.name,
+    extensionState.paused,
+    extensionState.title,
+    session.id,
+    snapshot?.playback?.title,
+  ]);
+
+  useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setPanel(null);
@@ -412,23 +456,7 @@ export default function Page() {
         '*',
       );
 
-      await postJson('/api/room/playback', {
-        secret: activePasscode,
-        sessionId: session.id,
-        sender: activePerson.name,
-        action,
-        currentTime,
-        isPlaying: action === 'PLAY' ? true : action === 'PAUSE' ? false : !extensionState.paused,
-        title: extensionState.title || snapshot?.playback?.title || null,
-      });
-
-      const nextSnapshot = await postJson<RoomSnapshot>('/api/room/snapshot', {
-        secret: activePasscode,
-        sessionId: session.id,
-        name: activePerson.name,
-      });
-
-      setSnapshot(nextSnapshot);
+      await persistPlaybackRef.current(action, currentTime);
     });
   };
 
@@ -638,13 +666,13 @@ export default function Page() {
       </div>
 
       <Flex className="mobile-dock" gap="2" justify="center">
-        <Button size="3" className="dock-button" variant="soft" onClick={() => setPanel('people')}>
+        <Button size="3" className="dock-button" variant="soft" data-active={panel === 'people'} onClick={() => setPanel('people')}>
           People
         </Button>
-        <Button size="3" className="dock-button" variant="soft" onClick={() => setPanel('chat')}>
+        <Button size="3" className="dock-button" variant="soft" data-active={panel === 'chat'} onClick={() => setPanel('chat')}>
           Chat
         </Button>
-        <Button size="3" className="dock-button" variant="soft" onClick={() => setPanel('access')}>
+        <Button size="3" className="dock-button" variant="soft" data-active={panel === 'access'} onClick={() => setPanel('access')}>
           Room
         </Button>
       </Flex>

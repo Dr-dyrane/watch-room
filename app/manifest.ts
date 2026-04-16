@@ -4,21 +4,28 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Watch Room',
     short_name: 'Watch Room',
-    description: 'Private watch room.',
+    description: 'Private watch room for couples.',
     start_url: '/',
     display: 'standalone',
-    background_color: '#f5f7fb',
-    theme_color: '#f5f7fb',
+    background_color: '#0a0d12',
+    theme_color: '#0a0d12',
     icons: [
       {
-        src: '/icon.svg',
-        sizes: 'any',
-        type: 'image/svg+xml',
+        src: '/icons/icon-192x192.png',
+        sizes: '192x192',
+        type: 'image/png',
+        purpose: 'maskable',
       },
       {
-        src: '/apple-icon.svg',
+        src: '/icons/icon-512x512.png',
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'maskable',
+      },
+      {
+        src: '/icons/icon-180x180.png',
         sizes: '180x180',
-        type: 'image/svg+xml',
+        type: 'image/png',
       },
     ],
   };

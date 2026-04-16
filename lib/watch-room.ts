@@ -86,7 +86,15 @@ export function getOrCreateSession() {
   const existing = window.localStorage.getItem(storageKey);
 
   if (existing) {
-    return JSON.parse(existing) as { id: string; name: string };
+    try {
+      const parsed = JSON.parse(existing) as { id?: unknown; name?: unknown };
+
+      if (typeof parsed.id === 'string' && typeof parsed.name === 'string') {
+        return { id: parsed.id, name: parsed.name };
+      }
+    } catch {
+      window.localStorage.removeItem(storageKey);
+    }
   }
 
   const created = {

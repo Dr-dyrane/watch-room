@@ -3,6 +3,9 @@ import { getServerEnv } from '@/lib/server-env';
 import { getPersonIdByName, PEOPLE } from '@/lib/watch-room';
 
 const ONLINE_WINDOW_MS = 45_000;
+const MAX_MESSAGE_LENGTH = 280;
+const MAX_TITLE_LENGTH = 160;
+const PLAYBACK_ACTIONS = new Set(['PLAY', 'PAUSE', 'SEEK_FORWARD', 'SEEK_BACKWARD', 'SYNC_NOW']);
 
 type MemberRow = {
   session_id: string;
@@ -87,6 +90,52 @@ function normalizePersonName(name: string) {
   return PEOPLE[profileId];
 }
 
+function assertSessionId(sessionId: string) {
+  if (typeof sessionId !== 'string' || sessionId.trim().length < 8) {
+    throw new Error('Invalid session.');
+  }
+}
+
+function normalizeMessageBody(body: string) {
+  const normalized = body.trim();
+
+  if (!normalized) {
+    throw new Error('Message cannot be empty.');
+  }
+
+  if (normalized.length > MAX_MESSAGE_LENGTH) {
+    throw new Error(`Message must be ${MAX_MESSAGE_LENGTH} characters or fewer.`);
+  }
+
+  return normalized;
+}
+
+function normalizePlaybackAction(action: string) {
+  if (!PLAYBACK_ACTIONS.has(action)) {
+    throw new Error('Invalid playback action.');
+  }
+
+  return action as PlaybackStateRow['action'];
+}
+
+function normalizePlaybackTime(currentTime: number) {
+  if (!Number.isFinite(currentTime) || currentTime < 0) {
+    throw new Error('Invalid playback time.');
+  }
+
+  return Math.floor(currentTime);
+}
+
+function normalizePlaybackTitle(title?: string | null) {
+  const normalized = title?.trim() || null;
+
+  if (!normalized) {
+    return null;
+  }
+
+  return normalized.slice(0, MAX_TITLE_LENGTH);
+}
+
 async function resolveMemberRole(roomId: string, sessionId: string, name: string) {
   const supabase = createSupabaseAdminClient();
   const person = normalizePersonName(name);
@@ -107,6 +156,7 @@ export async function joinRoom(input: {
   name: string;
 }) {
   assertSecret(input.secret);
+  assertSessionId(input.sessionId);
   const person = normalizePersonName(input.name);
   const roomId = await getRoomId();
   const supabase = createSupabaseAdminClient();
@@ -142,6 +192,7 @@ export async function getRoomSnapshot(input: {
   name: string;
 }) {
   assertSecret(input.secret);
+  assertSessionId(input.sessionId);
   const person = normalizePersonName(input.name);
   const roomId = await getRoomId();
   const supabase = createSupabaseAdminClient();
@@ -255,6 +306,7 @@ export async function setReadyState(input: {
   ready: boolean;
 }) {
   assertSecret(input.secret);
+  assertSessionId(input.sessionId);
   const roomId = await getRoomId();
   const supabase = createSupabaseAdminClient();
 
@@ -279,7 +331,9 @@ export async function sendMessage(input: {
   body: string;
 }) {
   assertSecret(input.secret);
+  assertSessionId(input.sessionId);
   const person = normalizePersonName(input.sender);
+  const body = normalizeMessageBody(input.body);
   const roomId = await getRoomId();
   const supabase = createSupabaseAdminClient();
 
@@ -287,7 +341,7 @@ export async function sendMessage(input: {
     room_id: roomId,
     session_id: input.sessionId,
     sender: person.name,
-    body: input.body.trim(),
+    body,
   });
 
   if (error) {
@@ -305,7 +359,11 @@ export async function sendPlayback(input: {
   title?: string | null;
 }) {
   assertSecret(input.secret);
+  assertSessionId(input.sessionId);
   const person = normalizePersonName(input.sender);
+  const action = normalizePlaybackAction(input.action);
+  const playbackTime = normalizePlaybackTime(input.currentTime);
+  const title = normalizePlaybackTitle(input.title);
   const roomId = await getRoomId();
   const supabase = createSupabaseAdminClient();
 
@@ -315,9 +373,9 @@ export async function sendPlayback(input: {
       room_id: roomId,
       session_id: input.sessionId,
       sender: person.name,
-      action: input.action,
-      playback_time: Math.max(0, Math.floor(input.currentTime)),
-      title: input.title?.trim() || null,
+      action,
+      playback_time: playbackTime,
+      title,
     })
     .select('id')
     .single();
@@ -332,10 +390,10 @@ export async function sendPlayback(input: {
       event_id: data.id,
       session_id: input.sessionId,
       sender: person.name,
-      action: input.action,
-      playback_time: Math.max(0, Math.floor(input.currentTime)),
+      action,
+      playback_time: playbackTime,
       is_playing: input.isPlaying,
-      title: input.title?.trim() || null,
+      title,
       updated_at: new Date().toISOString(),
     },
     {

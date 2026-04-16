@@ -1,13 +1,15 @@
-chrome.runtime.onInstalled.addListener(() => {
-  console.log('[watch-room] extension installed');
-});
-
 const ROOM_URL_PATTERNS = ['http://localhost:3000/*', 'http://127.0.0.1:3000/*', 'https://*.vercel.app/*'];
+const DEFAULT_ROOM_URL = 'http://localhost:3000';
+
+function getNetflixTabs(callback) {
+  chrome.tabs.query({ url: ['https://www.netflix.com/*'] }, (tabs) => {
+    callback(tabs.filter((tab) => typeof tab.id === 'number'));
+  });
+}
 
 function getNetflixTab(callback) {
-  chrome.tabs.query({ url: ['https://www.netflix.com/*'] }, (tabs) => {
-    const netflixTab = tabs.find((tab) => typeof tab.id === 'number');
-    callback(netflixTab);
+  getNetflixTabs((tabs) => {
+    callback(tabs[0]);
   });
 }
 
@@ -39,7 +41,7 @@ function getOrCreateRoomTab(callback) {
       return;
     }
 
-    chrome.tabs.create({ url: 'http://localhost:3000', active: true }, (createdTab) => {
+    chrome.tabs.create({ url: DEFAULT_ROOM_URL, active: true }, (createdTab) => {
       callback(createdTab);
     });
   });
@@ -72,19 +74,21 @@ function withNetflixBridge(tabId, message, sendResponse) {
 }
 
 function broadcastRoomContext(payload) {
-  getNetflixTab((netflixTab) => {
-    if (!netflixTab?.id) {
-      return;
-    }
+  getNetflixTabs((tabs) => {
+    tabs.forEach((netflixTab) => {
+      if (!netflixTab?.id) {
+        return;
+      }
 
-    withNetflixBridge(
-      netflixTab.id,
-      {
-        type: 'ROOM_CONTEXT',
-        payload,
-      },
-      () => {},
-    );
+      withNetflixBridge(
+        netflixTab.id,
+        {
+          type: 'ROOM_CONTEXT',
+          payload,
+        },
+        () => {},
+      );
+    });
   });
 }
 

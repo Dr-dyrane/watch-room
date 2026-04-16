@@ -1,8 +1,28 @@
 <svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="180" height="180" rx="44" fill="#0F1115"/>
-  <rect x="30" y="44" width="120" height="84" rx="22" fill="#F5F7FB"/>
-  <rect x="42" y="56" width="96" height="60" rx="16" fill="#DDE4EE"/>
-  <circle cx="64" cy="86" r="9" fill="#0F1115"/>
-  <rect x="82" y="77" width="36" height="18" rx="9" fill="#0F1115"/>
-  <rect x="70" y="144" width="40" height="6" rx="3" fill="#F5F7FB" fill-opacity="0.7"/>
+  <rect width="180" height="180" rx="44" fill="url(#bg)"/>
+  <ellipse cx="90" cy="58" rx="58" ry="40" fill="url(#halo)" opacity="0.72"/>
+  <rect x="28" y="30" width="124" height="92" rx="32" fill="url(#card)"/>
+  <rect x="38" y="40" width="104" height="72" rx="22" fill="url(#screen)"/>
+  <circle cx="63" cy="76" r="9" fill="#0C1016"/>
+  <rect x="80" y="67" width="38" height="18" rx="9" fill="#0C1016"/>
+  <rect x="62" y="140" width="56" height="7" rx="3.5" fill="#F5F7FB" fill-opacity="0.76"/>
+  <defs>
+    <linearGradient id="bg" x1="90" y1="0" x2="90" y2="180" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0C1016"/>
+      <stop offset="0.58" stop-color="#0E131D"/>
+      <stop offset="1" stop-color="#1B2536"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(90 58) rotate(90) scale(40 58)">
+      <stop stop-color="#7197CB" stop-opacity="0.72"/>
+      <stop offset="1" stop-color="#7197CB" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="card" x1="90" y1="30" x2="90" y2="122" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F7F9FC"/>
+      <stop offset="1" stop-color="#DBE4F0"/>
+    </linearGradient>
+    <linearGradient id="screen" x1="90" y1="40" x2="90" y2="112" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#DEE8F4"/>
+      <stop offset="1" stop-color="#C8D6E8"/>
+    </linearGradient>
+  </defs>
 </svg>
