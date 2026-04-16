@@ -1,0 +1,389 @@
+:root {
+  color-scheme: dark;
+  --bg: #07111f;
+  --surface: rgba(14, 25, 43, 0.72);
+  --surface-strong: rgba(15, 28, 48, 0.92);
+  --surface-soft: rgba(255, 255, 255, 0.06);
+  --line: rgba(255, 255, 255, 0.1);
+  --text: #f8fbff;
+  --muted: #9caec6;
+  --cyan: #67e8f9;
+  --violet: #a78bfa;
+  --green: #86efac;
+  --rose: #f9a8d4;
+  --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background:
+    radial-gradient(circle at top left, rgba(103, 232, 249, 0.2), transparent 28%),
+    radial-gradient(circle at top right, rgba(167, 139, 250, 0.22), transparent 24%),
+    linear-gradient(180deg, #06101d, #091323 45%, #050c16 100%);
+  color: var(--text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.page-shell {
+  width: min(1360px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 28px 0 40px;
+}
+
+.glass {
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(24px) saturate(160%);
+}
+
+.hero-card,
+.feature-card {
+  border-radius: 28px;
+}
+
+.hero-card {
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.hero-topbar,
+.section-heading,
+.stage-header,
+.chat-meta,
+.mini-panel-top,
+.control-row,
+.chat-input-row {
+  display: flex;
+  align-items: center;
+}
+
+.hero-topbar,
+.section-heading,
+.stage-header {
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(32px, 5vw, 52px);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+h2 {
+  font-size: clamp(24px, 3vw, 34px);
+}
+
+h3 {
+  font-size: 18px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.status-grid,
+.content-grid,
+.sub-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.status-grid {
+  margin-top: 24px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.content-grid {
+  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.9fr);
+}
+
+.left-stack,
+.right-stack {
+  display: grid;
+  gap: 16px;
+}
+
+.feature-card {
+  padding: 20px;
+}
+
+.status-pill,
+.presence-item,
+.chat-bubble,
+.mini-panel {
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+}
+
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+}
+
+.status-pill p,
+.presence-item p,
+.chat-meta span,
+.steps-list,
+.mini-panel p {
+  color: var(--muted);
+}
+
+.status-pill strong {
+  display: block;
+  margin-top: 4px;
+}
+
+.status-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+}
+
+.status-icon.good {
+  color: var(--green);
+  background: rgba(134, 239, 172, 0.12);
+}
+
+.status-icon.muted {
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.stage-card {
+  padding: 22px;
+}
+
+.live-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--muted);
+}
+
+.live-dot.live {
+  color: var(--green);
+  background: rgba(134, 239, 172, 0.13);
+}
+
+.time-display {
+  margin: 20px 0 18px;
+  font-size: clamp(56px, 9vw, 92px);
+  line-height: 0.95;
+  letter-spacing: -0.06em;
+}
+
+.control-row {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.control-button,
+.ghost-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 999px;
+  padding: 14px 18px;
+  color: var(--text);
+  cursor: pointer;
+  transition: transform 150ms ease, opacity 150ms ease, background 150ms ease;
+}
+
+.control-button:hover,
+.ghost-button:hover {
+  transform: translateY(-1px);
+}
+
+.control-button {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.control-button.primary {
+  background: linear-gradient(135deg, rgba(103, 232, 249, 0.22), rgba(167, 139, 250, 0.28));
+}
+
+.ghost-button {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.sub-grid {
+  margin-top: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.mini-panel {
+  padding: 16px;
+}
+
+.mini-panel-top {
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.presence-list,
+.chat-stream {
+  display: grid;
+  gap: 12px;
+}
+
+.presence-list {
+  margin-top: 14px;
+}
+
+.presence-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+}
+
+.badge-good {
+  color: var(--green);
+  background: rgba(134, 239, 172, 0.12);
+}
+
+.badge-muted {
+  color: var(--muted);
+  background: rgba(255,255,255,0.08);
+}
+
+.steps-list {
+  margin: 14px 0 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 10px;
+  line-height: 1.5;
+}
+
+.chat-card {
+  min-height: 420px;
+}
+
+.chat-stream {
+  margin-top: 14px;
+  max-height: 320px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.chat-bubble {
+  padding: 14px;
+}
+
+.chat-meta {
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.chat-bubble p {
+  line-height: 1.5;
+}
+
+.chat-input-row {
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.chat-input-row input {
+  flex: 1;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255,255,255,0.06);
+  color: var(--text);
+  padding: 14px 16px;
+  outline: none;
+}
+
+.chat-input-row input::placeholder {
+  color: #89a1bf;
+}
+
+@media (max-width: 1100px) {
+  .status-grid,
+  .content-grid,
+  .sub-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .page-shell {
+    width: min(100% - 20px, 100%);
+    padding-top: 20px;
+  }
+
+  .hero-card,
+  .feature-card {
+    border-radius: 24px;
+    padding: 18px;
+  }
+
+  .hero-topbar,
+  .section-heading,
+  .stage-header,
+  .chat-input-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .status-grid,
+  .sub-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .time-display {
+    font-size: 62px;
+  }
+}
