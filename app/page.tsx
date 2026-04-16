@@ -293,8 +293,8 @@ export default function Page() {
     };
 
     const updatePlayback = (payload: RealtimePostgresChangesPayload<PlaybackPayloadRow>) => {
-      const data = payload.new;
-      if (!data) return;
+      const data = payload.new as PlaybackPayloadRow;
+      if (!data || !data.event_id) return;
 
       const formattedPlayback = {
         eventId: Number(data.event_id),
@@ -311,8 +311,8 @@ export default function Page() {
     };
 
     const updateMessages = (payload: RealtimePostgresChangesPayload<MessagePayloadRow>) => {
-      const data = payload.new;
-      if (!data) return;
+      const data = payload.new as MessagePayloadRow;
+      if (!data || !data.id) return;
 
       const formattedMessage = {
         id: data.id as string,
