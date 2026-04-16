@@ -1,7 +1,7 @@
 const APP_SOURCE = 'watch-room-app';
 const EXT_SOURCE = 'watch-room-extension';
 
-const ROOM_HOST_MATCHERS = ['localhost', '127.0.0.1', 'watch-room.vercel.app'];
+const ROOM_HOST_MATCHERS = ['localhost', '127.0.0.1', 'watch-room.vercel.app', 'watch-room-xi.vercel.app'];
 
 let latestRoomContext = null;
 let overlayController = null;

@@ -163,13 +163,26 @@ export default function Page() {
       return;
     }
 
+    // Latency compensation: Adjust current time based on how long ago the event was updated
+    let compensatedTime = snapshot.playback.currentTime;
+    if (snapshot.playback.isPlaying && snapshot.playback.updatedAt) {
+      const updatedAt = new Date(snapshot.playback.updatedAt).getTime();
+      const now = Date.now();
+      const offsetSeconds = Math.max(0, (now - updatedAt) / 1000);
+
+      // Only compensate if the offset is meaningful (e.g., > 100ms) but not massive (e.g., < 10s)
+      if (offsetSeconds > 0.1 && offsetSeconds < 10) {
+        compensatedTime += offsetSeconds;
+      }
+    }
+
     window.postMessage(
       {
         source: 'watch-room-app',
         type: 'APP_CONTROL',
         payload: {
           action: snapshot.playback.action,
-          currentTime: snapshot.playback.currentTime,
+          currentTime: Math.floor(compensatedTime),
         },
       },
       '*',
@@ -260,6 +273,49 @@ export default function Page() {
       setPresenceSessionIds(Array.from(new Set(onlineIds)));
     };
 
+    const updatePlayback = (payload: any) => {
+      const data = payload.new;
+      if (!data) return;
+
+      const formattedPlayback = {
+        eventId: Number(data.event_id),
+        action: data.action as PlaybackAction,
+        currentTime: Number(data.playback_time),
+        isPlaying: Boolean(data.is_playing),
+        title: data.title as string | null,
+        sessionId: data.session_id as string,
+        sender: data.sender as string,
+        updatedAt: data.updated_at as string,
+      };
+
+      setSnapshot((prev) => (prev ? { ...prev, playback: formattedPlayback } : null));
+    };
+
+    const updateMessages = (payload: any) => {
+      const data = payload.new;
+      if (!data) return;
+
+      const formattedMessage = {
+        id: data.id as string,
+        sender: data.sender as string,
+        body: data.body as string,
+        time: new Date(data.created_at).toLocaleTimeString([], {
+          hour: 'numeric',
+          minute: '2-digit',
+        }),
+      };
+
+      setSnapshot((prev) => {
+        if (!prev) return null;
+        // Avoid duplicates and keep it ordered
+        if (prev.messages.some((m) => m.id === formattedMessage.id)) return prev;
+        return {
+          ...prev,
+          messages: [...prev.messages, formattedMessage].slice(-20),
+        };
+      });
+    };
+
     const channel = supabase
       .channel(`watch-room-realtime:${roomConfig.roomSlug}`, {
         config: {
@@ -269,9 +325,9 @@ export default function Page() {
         },
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'room_members' }, scheduleRefresh)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'room_messages' }, scheduleRefresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'room_messages' }, updateMessages)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'room_playback_events' }, scheduleRefresh)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'room_playback_state' }, scheduleRefresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'room_playback_state' }, updatePlayback)
       .on('presence', { event: 'sync' }, updatePresence)
       .on('presence', { event: 'join' }, updatePresence)
       .on('presence', { event: 'leave' }, updatePresence)
