@@ -50,14 +50,13 @@ import {
 type PanelType = 'people' | 'chat' | 'access' | 'install' | null;
 
 interface PlaybackPayloadRow {
-  event_id: number | string;
-  action: string;
-  playback_time: number | string;
-  is_playing: boolean | number;
+  id: string;
+  is_playing: boolean;
+  playback_time: number;
+  playback_updated_at: string;
+  playback_updated_by: string;
+  last_action: string;
   title: string | null;
-  session_id: string;
-  sender: string;
-  updated_at: string;
 }
 
 interface MessagePayloadRow {
@@ -89,6 +88,7 @@ export default function Page() {
   const [joining, startJoining] = useTransition();
   const [sending, startSending] = useTransition();
   const appliedEventId = useRef<number>(0);
+  const syncCooldownRef = useRef<number>(0);
   const refreshSnapshotRef = useRef<(() => Promise<void>) | null>(null);
   const persistPlaybackRef = useRef<(action: PlaybackAction, currentTime: number) => Promise<void>>(async () => {});
 
@@ -151,6 +151,9 @@ export default function Page() {
           return;
         }
 
+        // Set cooldown when user interacts locally
+        syncCooldownRef.current = Date.now() + 3000;
+
         startSending(async () => {
           await persistPlaybackRef.current(action, currentTime);
         });
@@ -168,45 +171,54 @@ export default function Page() {
   }, [activePasscode, extensionState.currentTime, startSending]);
 
   useEffect(() => {
-    if (!snapshot?.playback) {
+    if (!snapshot?.playback || !extensionConnected) {
       return;
     }
 
-    if (snapshot.playback.eventId <= appliedEventId.current) {
+    // 1. Check if we are in cooldown (just synced or just updated locally)
+    if (syncCooldownRef.current > Date.now()) {
       return;
     }
 
-    appliedEventId.current = snapshot.playback.eventId;
+    const playback = snapshot.playback;
 
-    if (snapshot.playback.sessionId === session.id) {
-      return;
-    }
-
-    // Latency compensation: Adjust current time based on how long ago the event was updated
-    let compensatedTime = snapshot.playback.currentTime;
-    if (snapshot.playback.isPlaying && snapshot.playback.updatedAt) {
-      const updatedAt = new Date(snapshot.playback.updatedAt).getTime();
+    // 2. Calculate Expected Authoritative Room Time
+    let expectedTime = playback.currentTime;
+    if (playback.isPlaying && playback.updatedAt) {
+      const updatedAt = new Date(playback.updatedAt).getTime();
       const now = Date.now();
       const offsetSeconds = Math.max(0, (now - updatedAt) / 1000);
 
-      // Only compensate if the offset is meaningful (e.g., > 100ms) but not massive (e.g., < 10s)
-      if (offsetSeconds > 0.1 && offsetSeconds < 10) {
-        compensatedTime += offsetSeconds;
+      // Only compensate if the offset is reasonable (e.g., < 10 minutes)
+      if (offsetSeconds < 600) {
+        expectedTime += offsetSeconds;
       }
     }
 
-    window.postMessage(
-      {
-        source: 'watch-room-app',
-        type: 'APP_CONTROL',
-        payload: {
-          action: snapshot.playback.action,
-          currentTime: Math.floor(compensatedTime),
+    // 3. Calculate Divergence
+    const shouldBePlaying = playback.isPlaying;
+    const isActuallyPlaying = !extensionState.paused;
+    const drift = Math.abs(extensionState.currentTime - expectedTime);
+    const driftThreshold = 2.5; // Seconds
+
+    // 4. If mismatched or drifted past threshold, enforce room state
+    if (shouldBePlaying !== isActuallyPlaying || drift > driftThreshold) {
+      // Set cooldown to avoid immediate bounce-back
+      syncCooldownRef.current = Date.now() + 3000;
+
+      window.postMessage(
+        {
+          source: 'watch-room-app',
+          type: 'APP_CONTROL',
+          payload: {
+            action: shouldBePlaying ? 'PLAY' : 'PAUSE',
+            currentTime: Math.floor(expectedTime),
+          },
         },
-      },
-      '*',
-    );
-  }, [session.id, snapshot?.playback]);
+        '*',
+      );
+    }
+  }, [extensionConnected, extensionState, snapshot?.playback]);
 
   useEffect(() => {
     if (!activePasscode) {
@@ -294,17 +306,17 @@ export default function Page() {
 
     const updatePlayback = (payload: RealtimePostgresChangesPayload<PlaybackPayloadRow>) => {
       const data = payload.new as PlaybackPayloadRow;
-      if (!data || !data.event_id) return;
+      if (!data || !data.id) return;
 
       const formattedPlayback = {
-        eventId: Number(data.event_id),
-        action: data.action as PlaybackAction,
+        eventId: 0,
+        action: (data.last_action as any) || 'PAUSE',
         currentTime: Number(data.playback_time),
         isPlaying: Boolean(data.is_playing),
         title: data.title as string | null,
-        sessionId: data.session_id as string,
-        sender: data.sender as string,
-        updatedAt: data.updated_at as string,
+        sessionId: data.playback_updated_by as string,
+        sender: 'Room', // Calculated from presence if needed
+        updatedAt: data.playback_updated_at as string,
       };
 
       setSnapshot((prev) => (prev ? { ...prev, playback: formattedPlayback } : null));
@@ -343,10 +355,9 @@ export default function Page() {
           },
         },
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'room_members' }, scheduleRefresh)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'room_messages' }, updateMessages)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'room_playback_events' }, scheduleRefresh)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'room_playback_state' }, updatePlayback)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'room_participants' }, scheduleRefresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'room_chat' }, updateMessages)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms' }, scheduleRefresh)
       .on('presence', { event: 'sync' }, updatePresence)
       .on('presence', { event: 'join' }, updatePresence)
       .on('presence', { event: 'leave' }, updatePresence)
@@ -513,6 +524,9 @@ export default function Page() {
   };
 
   const sendPlayback = (action: PlaybackAction) => {
+    // Set cooldown when user interacts locally
+    syncCooldownRef.current = Date.now() + 3000;
+
     startSending(async () => {
       const currentTime =
         action === 'SEEK_FORWARD'

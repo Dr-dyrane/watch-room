@@ -7,7 +7,7 @@ const MAX_MESSAGE_LENGTH = 280;
 const MAX_TITLE_LENGTH = 160;
 const PLAYBACK_ACTIONS = new Set(['PLAY', 'PAUSE', 'SEEK_FORWARD', 'SEEK_BACKWARD', 'SYNC_NOW']);
 
-type MemberRow = {
+type ParticipantRow = {
   session_id: string;
   name: string;
   role: 'host' | 'guest';
@@ -15,22 +15,22 @@ type MemberRow = {
   last_seen_at: string;
 };
 
-type MessageRow = {
+type ChatRow = {
   id: string;
   sender: string;
   body: string;
   created_at: string;
 };
 
-type PlaybackStateRow = {
-  event_id: number;
-  action: 'PLAY' | 'PAUSE' | 'SEEK_FORWARD' | 'SEEK_BACKWARD' | 'SYNC_NOW';
-  playback_time: number;
+type RoomRow = {
+  id: string;
+  slug: string;
+  title: string;
   is_playing: boolean;
-  title: string | null;
-  session_id: string;
-  sender: string;
-  updated_at: string;
+  playback_time: number;
+  playback_updated_at: string;
+  playback_updated_by: string | null;
+  last_action: string | null;
 };
 
 function assertSecret(secret: string) {
@@ -115,7 +115,7 @@ function normalizePlaybackAction(action: string) {
     throw new Error('Invalid playback action.');
   }
 
-  return action as PlaybackStateRow['action'];
+  return action;
 }
 
 function normalizePlaybackTime(currentTime: number) {
@@ -123,7 +123,7 @@ function normalizePlaybackTime(currentTime: number) {
     throw new Error('Invalid playback time.');
   }
 
-  return Math.floor(currentTime);
+  return currentTime; // Keep as float for precision
 }
 
 function normalizePlaybackTitle(title?: string | null) {
@@ -141,7 +141,7 @@ async function resolveMemberRole(roomId: string, sessionId: string, name: string
   const person = normalizePersonName(name);
 
   const { data: existingMember } = await supabase
-    .from('room_members')
+    .from('room_participants')
     .select('role')
     .eq('room_id', roomId)
     .eq('session_id', sessionId)
@@ -162,7 +162,7 @@ export async function joinRoom(input: {
   const supabase = createSupabaseAdminClient();
   const role = await resolveMemberRole(roomId, input.sessionId, input.name);
 
-  const { error } = await supabase.from('room_members').upsert(
+  const { error } = await supabase.from('room_participants').upsert(
     {
       room_id: roomId,
       session_id: input.sessionId,
@@ -199,7 +199,7 @@ export async function getRoomSnapshot(input: {
   const now = new Date().toISOString();
   const role = await resolveMemberRole(roomId, input.sessionId, input.name);
 
-  const memberUpsert = supabase.from('room_members').upsert(
+  const participantUpsert = supabase.from('room_participants').upsert(
     {
       room_id: roomId,
       session_id: input.sessionId,
@@ -213,79 +213,78 @@ export async function getRoomSnapshot(input: {
     },
   );
 
-  const membersQuery = supabase
-    .from('room_members')
+  const participantsQuery = supabase
+    .from('room_participants')
     .select('session_id,name,role,is_ready,last_seen_at')
     .eq('room_id', roomId)
     .order('created_at', { ascending: true });
 
-  const messagesQuery = supabase
-    .from('room_messages')
+  const chatQuery = supabase
+    .from('room_chat')
     .select('id,sender,body,created_at')
     .eq('room_id', roomId)
     .order('created_at', { ascending: false })
     .limit(20);
 
-  const playbackQuery = supabase
-    .from('room_playback_state')
-    .select('event_id,action,playback_time,is_playing,title,session_id,sender,updated_at')
-    .eq('room_id', roomId)
-    .maybeSingle();
+  const roomQuery = supabase
+    .from('rooms')
+    .select('id,slug,title,is_playing,current_time,playback_updated_at,playback_updated_by,last_action')
+    .eq('id', roomId)
+    .single();
 
-  const [memberUpsertResult, membersResult, messagesResult, playbackResult] = await Promise.all([
-    memberUpsert,
-    membersQuery,
-    messagesQuery,
-    playbackQuery,
+  const [participantUpsertResult, participantsResult, chatResult, roomResult] = await Promise.all([
+    participantUpsert,
+    participantsQuery,
+    chatQuery,
+    roomQuery,
   ]);
 
-  if (memberUpsertResult.error) {
-    throw new Error(memberUpsertResult.error.message);
+  if (participantUpsertResult.error) {
+    throw new Error(participantUpsertResult.error.message);
   }
 
-  if (membersResult.error) {
-    throw new Error(membersResult.error.message);
+  if (participantsResult.error) {
+    throw new Error(participantsResult.error.message);
   }
 
-  if (messagesResult.error) {
-    throw new Error(messagesResult.error.message);
+  if (chatResult.error) {
+    throw new Error(chatResult.error.message);
   }
 
-  if (playbackResult.error) {
-    throw new Error(playbackResult.error.message);
+  if (roomResult.error) {
+    throw new Error(roomResult.error.message);
   }
 
-  const members = ((membersResult.data ?? []) as MemberRow[]).map((member) => ({
-    sessionId: member.session_id,
-    name: member.name,
-    role: member.role,
-    ready: member.is_ready,
-    online: Date.now() - new Date(member.last_seen_at).getTime() <= ONLINE_WINDOW_MS,
+  const participants = ((participantsResult.data ?? []) as ParticipantRow[]).map((p) => ({
+    sessionId: p.session_id,
+    name: p.name,
+    role: p.role,
+    ready: p.is_ready,
+    online: Date.now() - new Date(p.last_seen_at).getTime() <= ONLINE_WINDOW_MS,
   }));
 
-  const messages = ((messagesResult.data ?? []) as MessageRow[])
+  const messages = ((chatResult.data ?? []) as ChatRow[])
     .reverse()
-    .map((message) => ({
-      id: message.id,
-      sender: message.sender,
-      body: message.body,
-      time: formatMessageTime(message.created_at),
+    .map((m) => ({
+      id: m.id,
+      sender: m.sender,
+      body: m.body,
+      time: formatMessageTime(m.created_at),
     }));
 
-  const playback = playbackResult.data
-    ? {
-        eventId: (playbackResult.data as PlaybackStateRow).event_id,
-        action: (playbackResult.data as PlaybackStateRow).action,
-        currentTime: (playbackResult.data as PlaybackStateRow).playback_time,
-        isPlaying: (playbackResult.data as PlaybackStateRow).is_playing,
-        title: (playbackResult.data as PlaybackStateRow).title,
-        sessionId: (playbackResult.data as PlaybackStateRow).session_id,
-        sender: (playbackResult.data as PlaybackStateRow).sender,
-        updatedAt: (playbackResult.data as PlaybackStateRow).updated_at,
-      }
-    : null;
+  const roomData = roomResult.data as RoomRow;
+  const playback = {
+    eventId: 0, // Legacy field, kept for type compatibility
+    action: (roomData.last_action as any) || 'PAUSE',
+    currentTime: roomData.playback_time,
+    isPlaying: roomData.is_playing,
+    title: roomData.title,
+    sessionId: roomData.playback_updated_by || '',
+    sender: participants.find(p => p.sessionId === roomData.playback_updated_by)?.name || 'Room',
+    updatedAt: roomData.playback_updated_at,
+  };
 
-  const me = members.find((member) => member.sessionId === input.sessionId) ?? null;
+  const me = participants.find((p) => p.sessionId === input.sessionId) ?? null;
   const serverEnv = getServerEnv();
 
   return {
@@ -294,8 +293,8 @@ export async function getRoomSnapshot(input: {
       title: serverEnv.roomTitle,
     },
     me,
-    members,
-    messages,
+    members: participants, // Keeping 'members' key for UI compatibility
+    messages, // Keeping 'messages' key for UI compatibility
     playback,
   };
 }
@@ -311,7 +310,7 @@ export async function setReadyState(input: {
   const supabase = createSupabaseAdminClient();
 
   const { error } = await supabase
-    .from('room_members')
+    .from('room_participants')
     .update({
       is_ready: input.ready,
       last_seen_at: new Date().toISOString(),
@@ -337,7 +336,7 @@ export async function sendMessage(input: {
   const roomId = await getRoomId();
   const supabase = createSupabaseAdminClient();
 
-  const { error } = await supabase.from('room_messages').insert({
+  const { error } = await supabase.from('room_chat').insert({
     room_id: roomId,
     session_id: input.sessionId,
     sender: person.name,
@@ -360,48 +359,27 @@ export async function sendPlayback(input: {
 }) {
   assertSecret(input.secret);
   assertSessionId(input.sessionId);
-  const person = normalizePersonName(input.sender);
   const action = normalizePlaybackAction(input.action);
   const playbackTime = normalizePlaybackTime(input.currentTime);
   const title = normalizePlaybackTitle(input.title);
   const roomId = await getRoomId();
   const supabase = createSupabaseAdminClient();
 
-  const { data, error } = await supabase
-    .from('room_playback_events')
-    .insert({
-      room_id: roomId,
-      session_id: input.sessionId,
-      sender: person.name,
-      action,
-      playback_time: playbackTime,
-      title,
-    })
-    .select('id')
-    .single();
-
-  if (error || !data) {
-    throw new Error(error?.message ?? 'Unable to create playback event.');
-  }
-
-  const { error: stateError } = await supabase.from('room_playback_state').upsert(
-    {
-      room_id: roomId,
-      event_id: data.id,
-      session_id: input.sessionId,
-      sender: person.name,
-      action,
-      playback_time: playbackTime,
+  // Authoritative update directly on the rooms table
+  const { error } = await supabase
+    .from('rooms')
+    .update({
       is_playing: input.isPlaying,
-      title,
-      updated_at: new Date().toISOString(),
-    },
-    {
-      onConflict: 'room_id',
-    },
-  );
+      playback_time: playbackTime,
+      playback_updated_at: new Date().toISOString(),
+      playback_updated_by: input.sessionId,
+      last_action: action,
+      title: title || undefined, // Only update if provided
+    })
+    .eq('id', roomId);
 
-  if (stateError) {
-    throw new Error(stateError.message);
+  if (error) {
+    throw new Error(error.message);
   }
 }
+
