@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Private Watch Room Bridge",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Minimal Netflix bridge for a private shared room.",
   "permissions": ["storage", "tabs", "scripting"],
   "host_permissions": [
