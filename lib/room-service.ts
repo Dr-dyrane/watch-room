@@ -228,7 +228,7 @@ export async function getRoomSnapshot(input: {
 
   const roomQuery = supabase
     .from('rooms')
-    .select('id,slug,title,is_playing,current_time,playback_updated_at,playback_updated_by,last_action')
+    .select('id,slug,title,is_playing,playback_time,playback_updated_at,playback_updated_by,last_action')
     .eq('id', roomId)
     .single();
 
